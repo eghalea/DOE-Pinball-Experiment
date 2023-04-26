@@ -1,0 +1,413 @@
+---
+title: "Final Report"
+author: "Eghorieta"
+date: "12/1/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Project For Design of Experments
+
+For our Design of Experiment Project, we created three different parts which looked at three different design of experiments designs. The three different experiment designs that we preformed were a completely randomized design , a factorial design , and $2^4$ factorial design. 
+
+## Completely Randomized Design
+
+```{r, echo=FALSE}
+library(pwr)
+pwr.anova.test(k=3,n=NULL,f=((.5*sqrt((3^2)-1))/(2*3)),sig.level=0.05,power=.75)
+z <- read.csv("https://raw.githubusercontent.com/Rusty1299/Projects/main/Part%202%20data%20redoe.csv")
+write.csv(z,"pinball.csv",row.names = FALSE)
+
+```
+
+For this experiment we required 53 samples for each of the 3 different treatment levels. Which resulted in taking 159 total samples.
+
+### Layout of Complete Randomized designs
+
+In this experiment, the 3 different treatments are represented by colors yellow, green and blue. the color blue represents the red ball, the color yellow represents the yellow ball and color green represents the green ball that we used in the actual experiment.
+
+```{r, echo=FALSE}
+library(knitr)
+
+F_levels <- cbind(z$plots,z$r,z$treatments) 
+kable(F_levels,caption = "Completely Randomized Design ", col.names = c("Plot","Replication","Color of Ball"))
+```
+
+Above is a layout of how we collected the samples for each treatment observation. We saved it in a csv file and used github to read the data into R for further analysis.
+
+```{r,echo=FALSE}
+z$treatments <- as.factor(z$treatments)
+```
+
+### Hypothesis test
+
+**H~o~**: $\mu_1 = \mu_2 = \mu_3$ - Null Hypothesis
+
+**H~a~**: *At least 1 differs* - Alternative Hypothesis
+
+### Boxplot of the experiment
+
+```{r, echo=FALSE}
+boxplot(z$distance~z$treatments, col= c("Red","Green","Yellow"), main = "Distance of each ball", xlab = "Treatment balls", ylab = "Distance in inches")
+```
+
+The boxplot reveals that the variation between the red ball, green ball and yellow ball are equal.
+
+### Testing normality
+
+```{r,echo=FALSE}
+qqnorm(z$distance)
+```
+
+The data looks normally distributed with little presence of outliers at the high extreme values of the distance The outliers might be due to excessive force that was applied to the launching process, the ball landing twice , and a misreading of landing position.
+
+### Analysis of variance
+
+```{r,echo=FALSE}
+a <- aov(data = z , distance~treatments)
+summary(a)
+```
+
+From the result **f~o~** is **0.783** with a corresponding **p-value** of **0.465** is significantly greater than $\alpha$ = **0.05**. Therefore we fail to reject **H~o~** that the means are equal, and conclude that none of the means are different.
+
+```{r,echo=FALSE}
+plot(a)
+```
+
+### Conclusion
+
+There seems to be nothing unusual about the plots except for the few outliers as the spread of the data looks constant across all treatment balls
+
+## Facotorial Design
+
+
+### Null and Alternative Hypotheses      
+
+**H~o~**: $\alpha_{i} = 0$ - Null Hypothesis
+
+**H~a~**: $\alpha_{i} \ne 0$ - Alternative Hypothesis
+
+**H~o~**: $\beta_{i} = 0$ - Null Hypothesis
+
+**H~a~**: $\beta_{i} \ne 0$ - Alternative Hypothesis
+
+**H~o~**: $\alpha \beta_{ij} = 0$ - Null Hypothesis
+
+**H~a~**: $\alpha \beta_{ij} \ne 0$ - Alternative Hypothesis
+
+### Level of Significance
+
+**$\alpha$** = **0.05**
+
+### Model Equation
+
+$y_{ijk} = \mu + \alpha_{i} + \beta_j + \alpha \beta_{ij} + \epsilon_{ijk}$
+
+### Proposed Layout with a Randomized Run Order
+```{r , include=FALSE}
+library(agricolae)
+library(GAD)
+trts<-c(2,3)
+design<-design.ab(trt=trts, r=3, design="crd",seed=878900)
+```
+
+
+```{r,echo= FALSE}
+
+design$book
+```
+
+In the layout, factor A(Pin.Location) represents Pin Elevation and it has levels 1 and 2 for settings 1 and 3 respectively. factor B(Angle) represents the Release Angle with levels 1,2 and 3 for corresponding angles 110, 140 and 170 degrees.
+Number of replications is 3 which gives a total of 18 observations in the experiment
+
+### Collected Data on Proposed Layout
+
+```{r , echo=FALSE}
+BungeeEx<-read.csv("https://raw.githubusercontent.com/Rusty1299/Projects/main/Factorial%20Design%20Project.csv")
+BungeeEx$Pin.Location<-as.fixed(BungeeEx$Pin.Location)
+BungeeEx$Angle<-as.random(BungeeEx$Angle)
+
+```
+
+
+```{r, echo=FALSE}
+BungeeEx
+```
+
+
+## Testing the Hypotheses
+
+```{r, echo=FALSE}
+model<-aov(BungeeEx$Distance...Inches.~BungeeEx$Pin.Location*BungeeEx$Angle)
+gad(model)
+```
+
+Firstly, we tested the interaction hypothesis that the pin location and the angle had an effect on the shooting distance. If we failed to reject the interaction null hypothesis, we tested the main effects the pin location and angle effects on the distance. 
+
+
+From the interaction result, interaction effects has **f~o~** value is **2.0883** with a corresponding **p-value** of **0.1666387** **>****0.05**. Since **0.1666387** **>****0.05**, we failed to reject the interaction null hypothesis that the interaction between pin location and the angle have an effect on the shooting distance.
+
+The next section we removed the interaction effect and tested the main effects. 
+
+### Model Equation
+
+$y_{ijk} = \mu + \alpha_{i} + \beta_j + \epsilon_{ijk}$
+
+```{r}
+model<-aov(BungeeEx$Distance...Inches.~BungeeEx$Pin.Location+BungeeEx$Angle)
+gad(model)
+```
+
+From the pin location result **f~o~** value is **6.4368** which corresponds to a **p-value** of **0.023703**. The angle result **f~o~** value is  **16.8605** which corresponds to a **p-value** of **0.000187**
+
+**We concluded that the pin location and angle have an effect on the shooting distance of the ball**
+
+Pin.Location:  0.023703  **<****0.05**
+
+Angle:         0.000187  **<****0.05**
+
+
+### ANOVA Test Plots and Interaction Plot
+
+```{r, echo=FALSE}
+interaction.plot(BungeeEx$Angle,BungeeEx$Pin.Location,BungeeEx$Distance...Inches., type = "l", col = 5:7 ,main ="Interraction Plot", ylab = "Distance", xlab = "Release Angles", trace.label = "Pin Elevation", lwd = 3, lty = 1)
+
+```
+
+
+
+```{r, echo=FALSE}
+plot(model)
+```
+
+### Conclusion
+
+There seems to be nothing unusaual about the plots. the data seems to follow a straight line on the normal probability plot with 2 extreme outliers on the tail ends of the data distribution. Other than that, everything is fairly normal. 
+
+We concluded that the pin location and angle have an effect on the shooting distance of the ball. 
+
+## 2^4 Factorial Design Experiment 
+### Data Collection Layout 
+
+For $2^4$ factorial design, we used design.ab to generate one replication of a run order for our $2^4$ factorial design 
+
+
+
+````{r a, include = FALSE }
+library(agricolae)
+#?design.ab
+trts<-c(2,2,2,2)
+design<-design.ab(trt=trts, r=1, design="crd",seed=878900)
+```
+
+
+```{r a1, echo=FALSE}
+design$book
+```
+
+
+### Experiment Data and Data Frame
+
+For each of our 4 factors, we  had two levels for each factors. They were classified as -1(low) and a +1(high). The different factor levels,and the assigned variables. 
+
+```{r, bbb, include=FALSE}
+library(knitr)
+A <- c("Pin Location","Postion 1","Postion 3")
+B <-c("Bungee Position"	,"Position 2",	"Position 3")
+C<-c("Release Angle",	"140 degrees",	"170 degrees")
+D<-c("Ball Type",	"Yellow",	"Red")
+F_levels <- rbind(A,B,C,D)
+colnames(F_levels)<- c("Factor","Low Level(-1)","High Level(+1)")
+
+```
+```{r f, echo=FALSE}
+kable(F_levels,caption = "Factors and Low and High Levels")
+
+```
+
+Here is our data that we collected from the experiment. \
+
+```{r b2, include=FALSE}
+library(DoE.base)
+Pin_Elevation<-c(-1,-1,-1,1,1,1,-1,-1,-1,1,1,1,1,-1,-1,1)
+Bungee_Position<-c(-1,-1,1,1,-1,1,1,1,1,1,-1,-1,1,-1,-1,-1)
+Release_Angle<-c(1,1,-1,1,1,1,1,1,-1,-1,-1,1,-1,-1,-1,-1)
+Ball_Type<-c(-1,1,1,-1,-1,1,1,-1,-1,1,1,1,-1,1,-1,-1)
+response<-c(36,35,34,60,68,60,37,38,33,41,42,52,51,34,26,47)
+dat<-data.frame(Pin_Elevation,Bungee_Position,Release_Angle,Ball_Type,response)
+```
+```{r, echo=FALSE}
+dat
+```
+
+### Null and Alternative Hypothesis Testing
+
+Here are the Hypothesis tests that we used in the experiment. We started at 
+the highest order hypothesis test, which was $\alpha_i$*$\beta_j$ hypothesis test. \
+
+
+
+**H~o~**: $\alpha_{i} = 0$ - Null Hypothesis
+
+**H~a~**: $\alpha_{i} \ne 0$ - Alternative Hypothesis
+
+**H~o~**: $\beta_{j} = 0$ - Null Hypothesis
+
+**H~a~**: $\beta_{j} \ne 0$ - Alternative Hypothesis
+
+**H~o~**: $\alpha \beta_{ij} = 0$ - Null Hypothesis
+
+**H~a~**: $\alpha \beta_{ij} \ne 0$ - Alternative Hypothesis
+
+
+### Half Normal Plot
+
+
+
+```{r lll, include = FALSE  }
+model<-lm(response~Pin_Elevation*Bungee_Position*Release_Angle*Ball_Type, data = dat)
+#summary(model)
+coef(model)
+
+```
+
+
+```{r,echo=FALSE}
+halfnormal(model)
+```
+
+
+
+From the plot, factors Pin Elevation and Release Angle are significant model terms.\
+
+### Model Equation
+
+$y_{i} = \beta_{0} + \beta_{1}x_{i1} + \beta_{2}x_{i2} +\epsilon_{i}$
+
+$Distance = {43.37} - 9.25x_{i1} + 4.875x_{i2}$
+
+### ANOVA  Model
+
+After running the half normal plot , we concluded that Release Angle and Pin Elevation were significant factors. We run the ANOVA model with those factors and generated the following table. 
+
+
+```{r, echo=FALSE}
+Pin_Elevation<-as.factor(Pin_Elevation)
+Bungee_Position<-as.factor(Bungee_Position)
+Release_Angle<-as.factor(Release_Angle)
+Ball_Type<-as.factor(Ball_Type)
+
+model1<-aov(response~Pin_Elevation+Release_Angle)
+summary(model1)
+```
+```{r , include=FALSE}
+coef(model1)
+```
+$y_{i} = \beta_{0} + \beta_{1}x_{i1} + \beta_{2}x_{i2} +\epsilon_{i}$
+
+$Distance = {29.25} - 18.50x_{i1} + 9.75x_{i2}$
+
+These are model equations wth their respective coeffents.
+
+### Conclusion
+From the result, values of "Prob > F" less than 0.0500 indicate model terms are significant. In this case Pin Elevation and Release Angle are significant model terms.
+
+
+## Code
+
+```{r, eval=FALSE}
+
+### Part 1
+
+library(pwr)
+pwr.anova.test(k=3,n=NULL,f=((.5*sqrt((3^2)-1))/(2*3)),sig.level=0.05,power=.75)
+library(agricolae)
+
+treatments<-c("green","yellow","blue")
+design<-design.crd(trt=treatments,r=13,seed = 12345)
+design$book
+
+library(knitr)
+
+F_levels <- cbind(z$plots,z$r,z$treatments) 
+kable(F_levels,caption = "Completely Randomized Design ", col.names = c("Plot","Replication","Color of Ball"))
+
+z <- read.csv("https://raw.githubusercontent.com/Rusty1299/Projects/main/Part%202%20data%20redoe.csv")
+z$treatments <- as.factor(z$treatments)
+
+boxplot(z$distance~z$treatments, col= c("Red","Green","Yellow"), main = "Distance of each ball", xlab = "Treatment balls", ylab = "Distance in inches")
+qqnorm(z$distance)
+a <- aov(data = z , distance~treatments)
+summary(a)
+
+## Part 2
+trts<-c(2,3)
+design<-design.ab(trt=trts, r=3, design="crd",seed=878900)
+design$book
+
+BungeeEx<-read.csv("https://raw.githubusercontent.com/Rusty1299/Projects/main/Factorial%20Design%20Project.csv")
+library(GAD)
+BungeeEx$Pin.Location<-as.fixed(BungeeEx$Pin.Location)
+BungeeEx$Angle<-as.random(BungeeEx$Angle)
+
+model<-aov(BungeeEx$Distance...Inches.~BungeeEx$Pin.Location*BungeeEx$Angle)
+gad(model)
+
+model<-aov(BungeeEx$Distance...Inches.~BungeeEx$Pin.Location+BungeeEx$Angle)
+gad(model)
+
+interaction.plot(BungeeEx$Angle,BungeeEx$Pin.Location,BungeeEx$Distance...Inches., type = "l", col = 5:7 ,main ="Interraction Plot", ylab = "Distance", xlab = "Release Angles", trace.label = "Pin Elevation", lwd = 3, lty = 1)
+
+plot(model)
+boxplot(BungeeEx$Distance...Inches.~BungeeEx$Angle, col = 6:9:3, main = "Boxplot for Relaease Angle", xlab = "Release Angle", ylab = "Distance")
+boxplot(BungeeEx$Distance...Inches.~BungeeEx$Pin.Location, col = 2:4, main = "Boxplot for Pin Elevation", xlab = "Pin Elevation", ylab = "Distance")
+
+## Part 3
+
+library(agricolae)
+#?design.ab
+trts<-c(2,2,2,2)
+design<-design.ab(trt=trts, r=1, design="crd",seed=878900)
+
+design$book
+
+library(knitr)
+A <- c("Pin Location","Postion 1","Postion 3")
+B <-c("Bungee Position"	,"Position 2",	"Position 3")
+C<-c("Release Angle",	"140 degrees",	"170 degrees")
+D<-c("Ball Type",	"Yellow",	"Red")
+F_levels <- rbind(A,B,C,D)
+colnames(F_levels)<- c("Factor","Low Level(-1)","High Level(+1)")
+kable(F_levels,caption = "Factors and Low and High Levels")
+
+library(DoE.base)
+Pin_Elevation<-c(-1,-1,-1,1,1,1,-1,-1,-1,1,1,1,1,-1,-1,1)
+Bungee_Position<-c(-1,-1,1,1,-1,1,1,1,1,1,-1,-1,1,-1,-1,-1)
+Release_Angle<-c(1,1,-1,1,1,1,1,1,-1,-1,-1,1,-1,-1,-1,-1)
+Ball_Type<-c(-1,1,1,-1,-1,1,1,-1,-1,1,1,1,-1,1,-1,-1)
+response<-c(36,35,34,60,68,60,37,38,33,41,42,52,51,34,26,47)
+dat<-data.frame(Pin_Elevation,Bungee_Position,Release_Angle,Ball_Type,response)
+dat
+
+model<-lm(response~Pin_Elevation*Bungee_Position*Release_Angle*Ball_Type, data = dat)
+#summary(model)
+coef(model)
+
+halfnormal(model)
+Pin_Elevation<-as.factor(Pin_Elevation)
+Bungee_Position<-as.factor(Bungee_Position)
+Release_Angle<-as.factor(Release_Angle)
+Ball_Type<-as.factor(Ball_Type)
+
+model1<-aov(response~Pin_Elevation+Release_Angle)
+summary(model1)
+coef(model1)
+
+```
+
+
+
+
+
+
